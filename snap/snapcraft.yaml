@@ -48,12 +48,12 @@ apps:
       - wireplumber-bin
     passthrough:
       daemon-scope: user
-    slots:
+    slots: &pwslots
       - pipewire
       - audio-playback
       - audio-record
       - pulseaudio
-    plugs:
+    plugs: &pwplugs
       - alsa
       - bluez
       - camera
@@ -71,19 +71,8 @@ apps:
       - pipewire-bin
     passthrough:
       daemon-scope: user
-    slots:
-      - audio-playback
-      - audio-record
-      - pulseaudio
-    plugs:
-      - alsa
-      - bluez
-      - camera
-      - hardware-observe
-      - media-control
-      - network
-      - network-bind
-      - system-observe
+    slots: *pwslots
+    plugs: *pwplugs
 
   pipewire-pulse:
     command: usr/bin/pipewire-pulse
@@ -95,17 +84,40 @@ apps:
       pulse-socket:
         listen-stream: $XDG_RUNTIME_DIR/pulse/native
         socket-mode: 0644
-    slots:
-      - audio-playback
-      - audio-record
-      - pulseaudio
-    plugs:
-      - alsa
-      - bluez
-      - hardware-observe
-      - network
-      - network-bind
-      - system-observe
+    slots: *pwslots
+    plugs: *pwplugs
+
+# apps for server-wide daemon
+  pipewire-server-bin:
+    command: usr/bin/pipewire
+    daemon: simple
+    restart-condition: always
+    before:
+      - wireplumber-server-bin
+    install-mode: disable
+    slots: *pwslots
+    plugs: *pwplugs
+
+  wireplumber-server-bin:
+    command: usr/bin/wireplumber
+    daemon: simple
+    restart-condition: always
+    after:
+      - pipewire-server-bin
+    install-mode: disable
+    slots: *pwslots
+    plugs: *pwplugs
+
+  pipewire-server-pulse:
+    command: usr/bin/pipewire-pulse
+    daemon: simple
+    restart-condition: always
+    after:
+      - pipewire-server-bin
+      - wireplumber-server-bin
+    install-mode: disable
+    slots: *pwslots
+    plugs: *pwplugs
 
   pw-play:
     command: usr/bin/pw-play
@@ -222,6 +234,7 @@ parts:
       - -Dtests=disabled
       - -Dsystemd=enabled
       - -Dsnap=enabled
+      - -Dsystemd-user-service=enabled
     override-pull: |
       craftctl default
       git_ver="$(git describe --tags --match "applied/*")"
