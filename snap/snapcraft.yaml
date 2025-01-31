@@ -28,7 +28,7 @@ layout:
 
 environment:
   SPA_PLUGIN_DIR: $SNAP/usr/lib/x86_64-linux-gnu/spa-0.2
-  LD_LIBRARY_PATH: ${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}/usr/lib:/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$SNAP/usr/lib:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/pipewire-0.3
+  LD_LIBRARY_PATH: ${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}/usr/lib:/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$SNAP/usr/lib:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/pipewire-0.3:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/pulseaudio
 
 apps:
   pipewire-bin:
@@ -46,13 +46,13 @@ apps:
       - wireplumber-bin
     passthrough:
       daemon-scope: user
-    slots:
+    slots: &pwslots
 # we have to wait until this is added to the store
 #      - pipewire
       - audio-playback
       - audio-record
       - pulseaudio
-    plugs:
+    plugs: &pwplugs
       - alsa
       - bluez
       - camera
@@ -70,19 +70,8 @@ apps:
       - pipewire-bin
     passthrough:
       daemon-scope: user
-    slots:
-      - audio-playback
-      - audio-record
-      - pulseaudio
-    plugs:
-      - alsa
-      - bluez
-      - camera
-      - hardware-observe
-      - media-control
-      - network
-      - network-bind
-      - system-observe
+    slots: *pwslots
+    plugs: *pwplugs
 
   pipewire-pulse:
     command: usr/bin/pipewire-pulse
@@ -94,17 +83,40 @@ apps:
       pulse-socket:
         listen-stream: $XDG_RUNTIME_DIR/pulse/native
         socket-mode: 0644
-    slots:
-      - audio-playback
-      - audio-record
-      - pulseaudio
-    plugs:
-      - alsa
-      - bluez
-      - hardware-observe
-      - network
-      - network-bind
-      - system-observe
+    slots: *pwslots
+    plugs: *pwplugs
+
+# apps for server-wide daemon
+  pipewire-server-bin:
+    command: usr/bin/pipewire
+    daemon: simple
+    restart-condition: always
+    before:
+      - wireplumber-server-bin
+    install-mode: disable
+    slots: *pwslots
+    plugs: *pwplugs
+
+  wireplumber-server-bin:
+    command: usr/bin/wireplumber
+    daemon: simple
+    restart-condition: always
+    after:
+      - pipewire-server-bin
+    install-mode: disable
+    slots: *pwslots
+    plugs: *pwplugs
+
+  pipewire-server-pulse:
+    command: usr/bin/pipewire-pulse
+    daemon: simple
+    restart-condition: always
+    after:
+      - pipewire-server-bin
+      - wireplumber-server-bin
+    install-mode: disable
+    slots: *pwslots
+    plugs: *pwplugs
 
 slots:
   dbus-wireplumber:
@@ -131,6 +143,7 @@ parts:
       - -Dtests=disabled
       - -Dsystemd=enabled
       - -Dsnap=enabled
+      - -Dsystemd-user-service=enabled
     override-pull: |
       craftctl default
       git_ver="$(git describe --tags --match "applied/*")"
@@ -220,6 +233,9 @@ parts:
       - libusb-1.0-0
       - psmisc
       - bluez-alsa-utils
+      - yaru-theme-sound
+      - pulseaudio-utils
+      - alsa-utils
 
     stage:
       - -usr/bin/meson
