@@ -21,6 +21,8 @@ layout:
     symlink: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/pipewire-0.3
   /usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/wireplumber-0.5:
     symlink: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/wireplumber-0.5
+  /usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/alsa-lib:
+    symlink: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/alsa-lib
   /etc/alsa:
     bind: $SNAP/etc/alsa
   /etc/pulse:
