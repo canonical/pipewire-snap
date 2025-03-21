@@ -38,7 +38,8 @@ apps:
   pipewire-bin:
     command: usr/bin/pipewire
     daemon: simple
-    restart-condition: always
+    # it's socket-activated, so if it dies/is killed, don't relaunch it
+    restart-condition: never
     sockets:
       pipewire-socket:
         listen-stream: $XDG_RUNTIME_DIR/pipewire-0
@@ -66,7 +67,7 @@ apps:
   pipewire-pulse:
     command: usr/bin/pipewire-pulse
     daemon: simple
-    restart-condition: always
+    restart-condition: never
     passthrough:
       daemon-scope: user
     sockets:
@@ -80,22 +81,27 @@ apps:
   pipewire-server-bin:
     command: usr/bin/pipewire
     daemon: simple
-    restart-condition: always
-    install-mode: disable
+    restart-condition: never
+    sockets:
+      pipewire-socket:
+        listen-stream: $XDG_RUNTIME_DIR/pipewire-0
+        socket-mode: 0644
+      pipewire-manager-socket:
+        listen-stream: $XDG_RUNTIME_DIR/pipewire-0-manager
+        socket-mode: 0644
     slots: *pwslots
     plugs: *pwplugs
-    environment: &pwenv
-      PIPEWIRE_RUNTIME_DIR: /tmp
-      PULSE_SERVER: /run
 
   pipewire-server-pulse:
     command: usr/bin/pipewire-pulse
     daemon: simple
-    restart-condition: always
-    install-mode: disable
+    restart-condition: never
+    sockets:
+      pulse-socket:
+        listen-stream: $XDG_RUNTIME_DIR/pulse/native
+        socket-mode: 0644
     slots: *pwslots
     plugs: *pwplugs
-    environment: *pwenv
 
   pw-play:
     command: usr/bin/pw-play
