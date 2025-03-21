@@ -84,13 +84,16 @@ apps:
     restart-condition: never
     sockets:
       pipewire-socket:
-        listen-stream: $XDG_RUNTIME_DIR/pipewire-0
+        listen-stream: $SNAP_COMMON/pipewire-0
         socket-mode: 0644
       pipewire-manager-socket:
-        listen-stream: $XDG_RUNTIME_DIR/pipewire-0-manager
+        listen-stream: $SNAP_COMMON/pipewire-0-manager
         socket-mode: 0644
     slots: *pwslots
     plugs: *pwplugs
+    environment: &serverenviron
+      PIPEWIRE_RUNTIME_DIR: $SNAP_COMMON
+      PULSE_SERVER: $SNAP_COMMON
 
   pipewire-server-pulse:
     command: usr/bin/pipewire-pulse
@@ -98,10 +101,11 @@ apps:
     restart-condition: never
     sockets:
       pulse-socket:
-        listen-stream: $XDG_RUNTIME_DIR/pulse/native
+        listen-stream: $SNAP_COMMON/pulse/native
         socket-mode: 0644
     slots: *pwslots
     plugs: *pwplugs
+    environment: *serverenviron
 
   pw-play:
     command: usr/bin/pw-play
