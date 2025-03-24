@@ -14,19 +14,35 @@ directly which one to use.
 The user daemons have their sockets at $XDG_RUNTIME_DIR
 (usually /run/user/UID/snap.pipewire, being UID the user ID), while the
 system daemons have them at $SNAP_COMMON (/var/snap/pipewire/common).
-Since these paths aren’t accessible from other snaps, it is a must to
-do soft links at the corresponding paths, at least for the PULSE socket.
+Since these paths aren’t the default ones, it is mandatory to set
+the PULSE_SERVER environment variable pointing to the corresponding
+folder: either /run/user/UID for user daemon, or /var/snap/pipewire/common
+for the system-wide daemon.
 
-So, to use the user daemon, just run
+As to have access to the pipewire socket, it not only requires connecting
+the pipewire interface, but also setting the PIPEWIRE_RUNTIME_DIR pointing
+to either /run/user/UID for user daemon, or to /var/snap/pipewire/common
+for the system-wide daemon.
 
-    ln -s /var/run/UID/snap.pipewire/pulse /var/run/UID/
+Thanks to the magic of socket activation, only the right daemon will
+be launched.
 
-and for the system daemon, run
+## Known bugs
 
-    sudo ln -s /var/snap/pipewire/common/pulse /var/run/
+For some reason, the first access to the pipewire socket fails with a
 
-Now, it is paramount to set the PULSE_SERVER environment variable pointing
-to the corresponding folder: either /var/run/UID for user daemon, or
-/var/run for the system-wide daemon.
+    stream node 32 error: no target node available
+    remote error: id=2 seq:7 res:-2 (No such file or directory): no target node available
 
-Of course, do only one soft link!!!
+error. But the next accesses will work fine. I think that it's due to
+the wireplumber daemon not being loaded fast enough.
+
+## Testing it
+
+To do a quick test from the Core command line, just copy a sound file to
+`/root/snap/pipewire/common` and run:
+
+    sudo PIPEWIRE_RUNTIME_DIR=/var/snap/pipewire/common snap run pipewire.pw-play /root/snap/pipewire/common/AUDIO-FILE
+
+The first time an error will be shown (check `Known bugs` section), but the next
+times it must work as expected.
