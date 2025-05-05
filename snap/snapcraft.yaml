@@ -75,6 +75,17 @@ apps:
       - audio-playback
       - audio-record
       - pulseaudio
+      - dbus-wireplumber
+      - dbus-freedesktop-reservedevice1-audio0
+      - dbus-freedesktop-reservedevice1-audio1
+      - dbus-freedesktop-reservedevice1-audio2
+      - dbus-freedesktop-reservedevice1-audio3
+      - dbus-freedesktop-reservedevice1-audio4
+      - dbus-freedesktop-reservedevice1-audio5
+      - dbus-freedesktop-reservedevice1-audio6
+      - dbus-freedesktop-reservedevice1-audio7
+      - dbus-freedesktop-reservedevice1-audio8
+      - dbus-freedesktop-reservedevice1-audio9
     plugs:
       - alsa
       - bluez
@@ -99,6 +110,7 @@ apps:
       - audio-playback
       - audio-record
       - pulseaudio
+      - dbus-pulseaudio
     plugs:
       - alsa
       - bluez
@@ -206,6 +218,46 @@ slots:
     interface: dbus
     name: org.pulseaudio.Server
     bus: session
+  dbus-freedesktop-reservedevice1-audio0:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio0
+  dbus-freedesktop-reservedevice1-audio1:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio1
+  dbus-freedesktop-reservedevice1-audio2:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio2
+  dbus-freedesktop-reservedevice1-audio3:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio3
+  dbus-freedesktop-reservedevice1-audio4:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio4
+  dbus-freedesktop-reservedevice1-audio5:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio5
+  dbus-freedesktop-reservedevice1-audio6:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio6
+  dbus-freedesktop-reservedevice1-audio7:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio7
+  dbus-freedesktop-reservedevice1-audio8:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio8
+  dbus-freedesktop-reservedevice1-audio9:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio9
 
 parts:
   pipewire:
