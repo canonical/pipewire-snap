@@ -49,8 +49,7 @@ apps:
     passthrough:
       daemon-scope: user
     slots:
-# we have to wait until this is added to the store
-#      - pipewire
+      - pipewire
       - audio-playback
       - audio-record
       - pulseaudio
