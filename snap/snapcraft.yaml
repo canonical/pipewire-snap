@@ -13,6 +13,8 @@ layout:
     bind: $SNAP/usr/share/pipewire
   /usr/share/wireplumber:
     bind: $SNAP/usr/share/wireplumber
+  /usr/bin/wireplumber:
+    symlink: $SNAP/usr/bin/wireplumber
   /usr/share/alsa:
     bind: $SNAP/usr/share/alsa
   /usr/share/alsa-card-profile:
@@ -30,13 +32,14 @@ layout:
 
 environment:
   SPA_PLUGIN_DIR: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/spa-0.2
-  LD_LIBRARY_PATH: ${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}/usr/lib:/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$SNAP/usr/lib:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/pipewire-0.3
+  LD_LIBRARY_PATH: ${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}/usr/lib:/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$SNAP/usr/lib:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/pipewire-0.3:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/pulseaudio
 
 apps:
   pipewire-bin:
     command: usr/bin/pipewire
     daemon: simple
-    restart-condition: always
+    # it's socket-activated, so if it dies/is killed, don't relaunch it
+    restart-condition: never
     sockets:
       pipewire-socket:
         listen-stream: $XDG_RUNTIME_DIR/pipewire-0
@@ -44,38 +47,26 @@ apps:
       pipewire-manager-socket:
         listen-stream: $XDG_RUNTIME_DIR/pipewire-0-manager
         socket-mode: 0644
-    before:
-      - wireplumber-bin
     passthrough:
       daemon-scope: user
-    slots:
+    slots: &pwslots
       - pipewire
       - audio-playback
       - audio-record
       - pulseaudio
-    plugs:
-      - alsa
-      - bluez
-      - camera
-      - hardware-observe
-      - media-control
-      - network
-      - network-bind
-      - system-observe
-
-  wireplumber-bin:
-    command: usr/bin/wireplumber
-    daemon: simple
-    restart-condition: always
-    after:
-      - pipewire-bin
-    passthrough:
-      daemon-scope: user
-    slots:
-      - audio-playback
-      - audio-record
-      - pulseaudio
-    plugs:
+      - dbus-wireplumber
+      - dbus-pulseaudio
+      - dbus-freedesktop-reservedevice1-audio0
+      - dbus-freedesktop-reservedevice1-audio1
+      - dbus-freedesktop-reservedevice1-audio2
+      - dbus-freedesktop-reservedevice1-audio3
+      - dbus-freedesktop-reservedevice1-audio4
+      - dbus-freedesktop-reservedevice1-audio5
+      - dbus-freedesktop-reservedevice1-audio6
+      - dbus-freedesktop-reservedevice1-audio7
+      - dbus-freedesktop-reservedevice1-audio8
+      - dbus-freedesktop-reservedevice1-audio9
+    plugs: &pwplugs
       - alsa
       - bluez
       - camera
@@ -88,114 +79,116 @@ apps:
   pipewire-pulse:
     command: usr/bin/pipewire-pulse
     daemon: simple
-    restart-condition: always
+    restart-condition: never
     passthrough:
       daemon-scope: user
     sockets:
       pulse-socket:
         listen-stream: $XDG_RUNTIME_DIR/pulse/native
         socket-mode: 0644
-    slots:
-      - audio-playback
-      - audio-record
-      - pulseaudio
-    plugs:
-      - alsa
-      - bluez
-      - hardware-observe
-      - network
-      - network-bind
-      - system-observe
+    slots: *pwslots
+    plugs: *pwplugs
+
+# apps for server-wide daemon
+  pipewire-server-bin:
+    command: usr/bin/pipewire
+    daemon: simple
+    restart-condition: never
+    sockets:
+      pipewire-socket:
+        listen-stream: $SNAP_COMMON/pipewire-0
+        socket-mode: 0644
+    slots: *pwslots
+    plugs: *pwplugs
+    environment: &serverenviron
+      PIPEWIRE_RUNTIME_DIR: $SNAP_COMMON
+      PULSE_SERVER: $SNAP_COMMON
+
+  pipewire-server-pulse:
+    command: usr/bin/pipewire-pulse
+    daemon: simple
+    restart-condition: never
+    sockets:
+      pulse-socket:
+        listen-stream: $SNAP_COMMON/pulse/native
+        socket-mode: 0644
+    slots: *pwslots
+    plugs: *pwplugs
+    environment: *serverenviron
 
   pw-play:
     command: usr/bin/pw-play
-    slots:
+    slots: &pwtoolsslots
       - pipewire
+      - audio-playback
 
   pw-cat:
     command: usr/bin/pw-cat
-    slots:
-      - pipewire
+    slots: *pwtoolsslots
 
   pw-cli:
     command: usr/bin/pw-cli
-    slots:
-      - pipewire
+    slots: *pwtoolsslots
 
   pw-config:
     command: usr/bin/pw-config
-    slots:
-      - pipewire
+    slots: *pwtoolsslots
 
   pw-dot:
     command: usr/bin/pw-dot
-    slots:
-      - pipewire
+    slots: *pwtoolsslots
 
   pw-dsdplay:
     command: usr/bin/pw-dsdplay
-    slots:
-      - pipewire
+    slots: *pwtoolsslots
 
   pw-dump:
     command: usr/bin/pw-dump
-    slots:
-      - pipewire
+    slots: *pwtoolsslots
 
   pw-encplay:
     command: usr/bin/pw-encplay
-    slots:
-      - pipewire
+    slots: *pwtoolsslots
 
   pw-link:
     command: usr/bin/pw-link
-    slots:
-      - pipewire
+    slots: *pwtoolsslots
 
   pw-loopback:
     command: usr/bin/pw-loopback
-    slots:
-      - pipewire
+    slots: *pwtoolsslots
 
   pw-metadata:
     command: usr/bin/pw-metadata
-    slots:
-      - pipewire
+    slots: *pwtoolsslots
 
   pw-mididump:
     command: usr/bin/pw-mididump
-    slots:
-      - pipewire
+    slots: *pwtoolsslots
 
   pw-midiplay:
     command: usr/bin/pw-midiplay
-    slots:
-      - pipewire
+    slots: *pwtoolsslots
 
   pw-midirecord:
     command: usr/bin/pw-midirecord
-    slots:
-      - pipewire
+    slots: *pwtoolsslots
 
   pw-mon:
     command: usr/bin/pw-mon
-    slots:
-      - pipewire
+    slots: *pwtoolsslots
 
   pw-profiler:
     command: usr/bin/pw-profiler
-    slots:
-      - pipewire
+    slots: *pwtoolsslots
 
   pw-record:
     command: usr/bin/pw-record
-    slots:
-      - pipewire
+    slots: *pwtoolsslots
 
   pw-top:
     command: usr/bin/pw-top
-    slots:
-      - pipewire
+    slots: *pwtoolsslots
 
 slots:
   dbus-wireplumber:
@@ -206,6 +199,47 @@ slots:
     interface: dbus
     name: org.pulseaudio.Server
     bus: session
+  dbus-freedesktop-reservedevice1-audio0:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio0
+  dbus-freedesktop-reservedevice1-audio1:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio1
+  dbus-freedesktop-reservedevice1-audio2:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio2
+  dbus-freedesktop-reservedevice1-audio3:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio3
+  dbus-freedesktop-reservedevice1-audio4:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio4
+  dbus-freedesktop-reservedevice1-audio5:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio5
+  dbus-freedesktop-reservedevice1-audio6:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio6
+  dbus-freedesktop-reservedevice1-audio7:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio7
+  dbus-freedesktop-reservedevice1-audio8:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio8
+  dbus-freedesktop-reservedevice1-audio9:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio9
+
 
 parts:
   pipewire:
@@ -222,6 +256,8 @@ parts:
       - -Dtests=disabled
       - -Dsystemd=enabled
       - -Dsnap=enabled
+      - -Dsystemd-user-service=enabled
+      - -Dsystemd-system-service=enabled
     override-pull: |
       craftctl default
       git_ver="$(git describe --tags --match "applied/*")"
@@ -229,6 +265,7 @@ parts:
       git_ver="${git_ver#applied/}"
       git_ver="${git_ver%-0-g*}"
       craftctl set version="${git_ver}"
+      patch -p1 < $CRAFT_PROJECT_DIR/patches/launch-wireplumber.diff
     build-packages:
       - dpkg-dev
       - debhelper-compat
@@ -311,6 +348,9 @@ parts:
       - libusb-1.0-0
       - psmisc
       - bluez-alsa-utils
+      - yaru-theme-sound
+      - pulseaudio-utils
+      - alsa-utils
 
     stage:
       - -usr/bin/meson
