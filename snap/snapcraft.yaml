@@ -46,8 +46,7 @@ apps:
         socket-mode: 0644
     before:
       - wireplumber-bin
-    passthrough:
-      daemon-scope: user
+    daemon-scope: user
     slots:
       - pipewire
       - audio-playback
@@ -69,8 +68,7 @@ apps:
     restart-condition: always
     after:
       - pipewire-bin
-    passthrough:
-      daemon-scope: user
+    daemon-scope: user
     slots:
       - audio-playback
       - audio-record
@@ -89,8 +87,7 @@ apps:
     command: usr/bin/pipewire-pulse
     daemon: simple
     restart-condition: always
-    passthrough:
-      daemon-scope: user
+    daemon-scope: user
     sockets:
       pulse-socket:
         listen-stream: $XDG_RUNTIME_DIR/pulse/native
@@ -106,96 +103,6 @@ apps:
       - network
       - network-bind
       - system-observe
-
-  pw-play:
-    command: usr/bin/pw-play
-    slots:
-      - pipewire
-
-  pw-cat:
-    command: usr/bin/pw-cat
-    slots:
-      - pipewire
-
-  pw-cli:
-    command: usr/bin/pw-cli
-    slots:
-      - pipewire
-
-  pw-config:
-    command: usr/bin/pw-config
-    slots:
-      - pipewire
-
-  pw-dot:
-    command: usr/bin/pw-dot
-    slots:
-      - pipewire
-
-  pw-dsdplay:
-    command: usr/bin/pw-dsdplay
-    slots:
-      - pipewire
-
-  pw-dump:
-    command: usr/bin/pw-dump
-    slots:
-      - pipewire
-
-  pw-encplay:
-    command: usr/bin/pw-encplay
-    slots:
-      - pipewire
-
-  pw-link:
-    command: usr/bin/pw-link
-    slots:
-      - pipewire
-
-  pw-loopback:
-    command: usr/bin/pw-loopback
-    slots:
-      - pipewire
-
-  pw-metadata:
-    command: usr/bin/pw-metadata
-    slots:
-      - pipewire
-
-  pw-mididump:
-    command: usr/bin/pw-mididump
-    slots:
-      - pipewire
-
-  pw-midiplay:
-    command: usr/bin/pw-midiplay
-    slots:
-      - pipewire
-
-  pw-midirecord:
-    command: usr/bin/pw-midirecord
-    slots:
-      - pipewire
-
-  pw-mon:
-    command: usr/bin/pw-mon
-    slots:
-      - pipewire
-
-  pw-profiler:
-    command: usr/bin/pw-profiler
-    slots:
-      - pipewire
-
-  pw-record:
-    command: usr/bin/pw-record
-    slots:
-      - pipewire
-
-  pw-top:
-    command: usr/bin/pw-top
-    slots:
-      - pipewire
 
 slots:
   dbus-wireplumber:
