@@ -273,6 +273,7 @@ parts:
       - python3-docutils
       - systemd-dev
     stage-packages:
+      - alsa-ucm-conf
       - libxfixes3
       - libcanberra0t64
       - libroc0.3
