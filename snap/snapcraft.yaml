@@ -8,6 +8,9 @@ description: |
 grade: stable
 confinement: strict
 
+assumes:
+  - snapd2.71 # for pipewire system-daemon socket paths
+
 layout:
   /usr/share/pipewire:
     bind: $SNAP/usr/share/pipewire
@@ -23,36 +26,57 @@ layout:
     symlink: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/wireplumber-0.5
   /usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/alsa-lib:
     symlink: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/alsa-lib
+  /usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libcamera:
+    symlink: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libcamera
+  /usr/libexec/libcamera:
+    symlink: $SNAP/usr/libexec/libcamera
   /etc/alsa:
     bind: $SNAP/etc/alsa
   /etc/pulse:
     bind: $SNAP/etc/pulse
+  /etc/pipewire:
+    bind: $SNAP/etc/pipewire
 
 environment:
   SPA_PLUGIN_DIR: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/spa-0.2
   LD_LIBRARY_PATH: ${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}/usr/lib:/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$SNAP/usr/lib:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/pipewire-0.3
+  PIPEWIRE_RUNTIME_DIR: $SNAP_COMMON
+  PULSE_SERVER: $SNAP_COMMON
 
 apps:
   pipewire-bin:
     command: usr/bin/pipewire
     daemon: simple
-    restart-condition: always
+    restart-condition: never
     sockets:
       pipewire-socket:
-        listen-stream: $XDG_RUNTIME_DIR/pipewire-0
-        socket-mode: 0644
+        listen-stream: $SNAP_COMMON/pipewire-0
+        socket-mode: 0600
       pipewire-manager-socket:
-        listen-stream: $XDG_RUNTIME_DIR/pipewire-0-manager
-        socket-mode: 0644
+        listen-stream: $SNAP_COMMON/pipewire-0-manager
+        socket-mode: 0600
     before:
       - wireplumber-bin
-    passthrough:
-      daemon-scope: user
+    environment:
+      PIPEWIRE_RUNTIME_DIR: $SNAP_COMMON
+      PULSE_SERVER: $SNAP_COMMON
     slots:
       - pipewire
       - audio-playback
       - audio-record
       - pulseaudio
+      - dbus-wireplumber
+      - dbus-pulseaudio
+      - dbus-freedesktop-reservedevice1-audio0
+      - dbus-freedesktop-reservedevice1-audio1
+      - dbus-freedesktop-reservedevice1-audio2
+      - dbus-freedesktop-reservedevice1-audio3
+      - dbus-freedesktop-reservedevice1-audio4
+      - dbus-freedesktop-reservedevice1-audio5
+      - dbus-freedesktop-reservedevice1-audio6
+      - dbus-freedesktop-reservedevice1-audio7
+      - dbus-freedesktop-reservedevice1-audio8
+      - dbus-freedesktop-reservedevice1-audio9
     plugs:
       - alsa
       - bluez
@@ -66,15 +90,28 @@ apps:
   wireplumber-bin:
     command: usr/bin/wireplumber
     daemon: simple
-    restart-condition: always
+    restart-condition: never
     after:
       - pipewire-bin
-    passthrough:
-      daemon-scope: user
+    environment:
+      PIPEWIRE_RUNTIME_DIR: $SNAP_COMMON
+      PULSE_SERVER: $SNAP_COMMON
     slots:
       - audio-playback
       - audio-record
       - pulseaudio
+      - dbus-wireplumber
+      - dbus-pulseaudio
+      - dbus-freedesktop-reservedevice1-audio0
+      - dbus-freedesktop-reservedevice1-audio1
+      - dbus-freedesktop-reservedevice1-audio2
+      - dbus-freedesktop-reservedevice1-audio3
+      - dbus-freedesktop-reservedevice1-audio4
+      - dbus-freedesktop-reservedevice1-audio5
+      - dbus-freedesktop-reservedevice1-audio6
+      - dbus-freedesktop-reservedevice1-audio7
+      - dbus-freedesktop-reservedevice1-audio8
+      - dbus-freedesktop-reservedevice1-audio9
     plugs:
       - alsa
       - bluez
@@ -88,17 +125,31 @@ apps:
   pipewire-pulse:
     command: usr/bin/pipewire-pulse
     daemon: simple
-    restart-condition: always
-    passthrough:
-      daemon-scope: user
+    restart-condition: never
     sockets:
       pulse-socket:
-        listen-stream: $XDG_RUNTIME_DIR/pulse/native
-        socket-mode: 0644
+        listen-stream: $SNAP_COMMON/pulse/native
+        socket-mode: 0600
+    environment:
+      PIPEWIRE_RUNTIME_DIR: $SNAP_COMMON
+      PULSE_SERVER: $SNAP_COMMON
+      PULSE_RUNTIME_PATH: $SNAP_COMMON/pulse
     slots:
       - audio-playback
       - audio-record
       - pulseaudio
+      - dbus-wireplumber
+      - dbus-pulseaudio
+      - dbus-freedesktop-reservedevice1-audio0
+      - dbus-freedesktop-reservedevice1-audio1
+      - dbus-freedesktop-reservedevice1-audio2
+      - dbus-freedesktop-reservedevice1-audio3
+      - dbus-freedesktop-reservedevice1-audio4
+      - dbus-freedesktop-reservedevice1-audio5
+      - dbus-freedesktop-reservedevice1-audio6
+      - dbus-freedesktop-reservedevice1-audio7
+      - dbus-freedesktop-reservedevice1-audio8
+      - dbus-freedesktop-reservedevice1-audio9
     plugs:
       - alsa
       - bluez
@@ -197,6 +248,16 @@ apps:
     slots:
       - pipewire
 
+  wpctl:
+    command: usr/bin/wpctl
+    slots:
+      - pipewire
+
+  wpexec:
+    command: usr/bin/wpexec
+    slots:
+      - pipewire
+
 slots:
   dbus-wireplumber:
     interface: dbus
@@ -206,12 +267,94 @@ slots:
     interface: dbus
     name: org.pulseaudio.Server
     bus: session
+  dbus-freedesktop-reservedevice1-audio0:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio0
+  dbus-freedesktop-reservedevice1-audio1:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio1
+  dbus-freedesktop-reservedevice1-audio2:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio2
+  dbus-freedesktop-reservedevice1-audio3:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio3
+  dbus-freedesktop-reservedevice1-audio4:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio4
+  dbus-freedesktop-reservedevice1-audio5:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio5
+  dbus-freedesktop-reservedevice1-audio6:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio6
+  dbus-freedesktop-reservedevice1-audio7:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio7
+  dbus-freedesktop-reservedevice1-audio8:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio8
+  dbus-freedesktop-reservedevice1-audio9:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.ReserveDevice1.Audio9
 
 parts:
+  core-config:
+    plugin: dump
+    source: snap/local
+
+  libcamera:
+    plugin: meson
+    source: https://git.libcamera.org/libcamera/libcamera.git
+    source-type: git
+    source-depth: 1
+    source-tag: v0.7.0
+    meson-parameters:
+      - --prefix=/usr
+      - -Dbuildtype=release
+      - -Ddocumentation=disabled
+      - -Dcam=disabled
+      - -Dgstreamer=enabled
+      - -Dlibunwind=enabled
+      - -Dpycamera=disabled
+      - -Dtracing=disabled
+      - -Dlc-compliance=disabled
+      - -Dtest=false
+      - -Dv4l2=enabled
+    build-packages:
+      - libevent-dev
+      - libgnutls28-dev
+      - libgstreamer-plugins-base1.0-dev
+      - libgstreamer1.0-dev
+      - libtiff-dev
+      - libudev-dev
+      - libyaml-dev
+      - libyuv-dev
+      - openssl
+      - pkgconf
+      - python3-jinja2
+      - python3-ply
+      - python3-yaml
+    stage-packages:
+      - libudev1
+      - libyaml-0-2
+      - libyuv0
+
   pipewire:
+    after: [libcamera]
     plugin: meson
     source: https://git.launchpad.net/ubuntu/+source/pipewire
-    source-branch: 'applied/ubuntu/oracular'
+    source-branch: 'ubuntu/resolute'
     source-type: git
     meson-parameters:
       - --prefix=/usr
@@ -220,15 +363,13 @@ parts:
       - -Dexamples=disabled
       - -Dman=disabled
       - -Dtests=disabled
-      - -Dsystemd=enabled
+      - -Dsystemd-user-service=disabled
+      - -Dsystemd-system-service=disabled
+      - -Dlibcamera=enabled
       - -Dsnap=enabled
     override-pull: |
       craftctl default
-      git_ver="$(git describe --tags --match "applied/*")"
-      git_ver="${git_ver#importer/}"
-      git_ver="${git_ver#applied/}"
-      git_ver="${git_ver%-0-g*}"
-      craftctl set version="${git_ver}"
+      craftctl set version="$(dpkg-parsechangelog -SVersion)"
     build-packages:
       - dpkg-dev
       - debhelper-compat
@@ -237,7 +378,6 @@ parts:
       - libasound2-dev
       - libavahi-client-dev
       - libbluetooth-dev
-      - libcamera-dev
       - libdbus-1-dev
       - libffado-dev
       - libfreeaptx-dev
@@ -294,7 +434,9 @@ parts:
       - libasound2t64
       - libgstreamer-plugins-base1.0-0
       - libmysofa1
-      - libcamera0.2
+      - libegl1
+      - libgles2
+      - libglvnd0
       - libldacbt-enc2
       - libsbc1
       - liblc3-1
