@@ -34,6 +34,8 @@ layout:
     bind: $SNAP/etc/alsa
   /etc/pulse:
     bind: $SNAP/etc/pulse
+  /etc/pipewire:
+    bind: $SNAP/etc/pipewire
 
 environment:
   SPA_PLUGIN_DIR: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/spa-0.2
@@ -307,6 +309,10 @@ slots:
     name: org.freedesktop.ReserveDevice1.Audio9
 
 parts:
+  core-config:
+    plugin: dump
+    source: snap/local
+
   libcamera:
     plugin: meson
     source: https://git.libcamera.org/libcamera/libcamera.git
