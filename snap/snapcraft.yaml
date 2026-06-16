@@ -246,6 +246,16 @@ apps:
     slots:
       - pipewire
 
+  wpctl:
+    command: usr/bin/wpctl
+    slots:
+      - pipewire
+
+  wpexec:
+    command: usr/bin/wpexec
+    slots:
+      - pipewire
+
 slots:
   dbus-wireplumber:
     interface: dbus
