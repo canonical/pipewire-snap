@@ -8,6 +8,9 @@ description: |
 grade: stable
 confinement: strict
 
+assumes:
+  - snapd2.71 # for pipewire system-daemon socket paths
+
 layout:
   /usr/share/pipewire:
     bind: $SNAP/usr/share/pipewire
@@ -31,6 +34,8 @@ layout:
 environment:
   SPA_PLUGIN_DIR: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/spa-0.2
   LD_LIBRARY_PATH: ${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}/usr/lib:/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$SNAP/usr/lib:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/pipewire-0.3
+  PIPEWIRE_RUNTIME_DIR: $SNAP_COMMON
+  PULSE_SERVER: $SNAP_COMMON
 
 apps:
   pipewire-bin:
@@ -39,15 +44,16 @@ apps:
     restart-condition: always
     sockets:
       pipewire-socket:
-        listen-stream: $XDG_RUNTIME_DIR/pipewire-0
-        socket-mode: 0644
+        listen-stream: $SNAP_COMMON/pipewire-0
+        socket-mode: 0600
       pipewire-manager-socket:
-        listen-stream: $XDG_RUNTIME_DIR/pipewire-0-manager
-        socket-mode: 0644
+        listen-stream: $SNAP_COMMON/pipewire-0-manager
+        socket-mode: 0600
     before:
       - wireplumber-bin
-    passthrough:
-      daemon-scope: user
+    environment:
+      PIPEWIRE_RUNTIME_DIR: $SNAP_COMMON
+      PULSE_SERVER: $SNAP_COMMON
     slots:
       - pipewire
       - audio-playback
@@ -69,8 +75,9 @@ apps:
     restart-condition: always
     after:
       - pipewire-bin
-    passthrough:
-      daemon-scope: user
+    environment:
+      PIPEWIRE_RUNTIME_DIR: $SNAP_COMMON
+      PULSE_SERVER: $SNAP_COMMON
     slots:
       - audio-playback
       - audio-record
@@ -88,13 +95,15 @@ apps:
   pipewire-pulse:
     command: usr/bin/pipewire-pulse
     daemon: simple
-    restart-condition: always
-    passthrough:
-      daemon-scope: user
+    restart-condition: never
     sockets:
       pulse-socket:
-        listen-stream: $XDG_RUNTIME_DIR/pulse/native
-        socket-mode: 0644
+        listen-stream: $SNAP_COMMON/pulse/native
+        socket-mode: 0600
+    environment:
+      PIPEWIRE_RUNTIME_DIR: $SNAP_COMMON
+      PULSE_SERVER: $SNAP_COMMON
+      PULSE_RUNTIME_PATH: $SNAP_COMMON/pulse
     slots:
       - audio-playback
       - audio-record
@@ -220,7 +229,8 @@ parts:
       - -Dexamples=disabled
       - -Dman=disabled
       - -Dtests=disabled
-      - -Dsystemd=enabled
+      - -Dsystemd-user-service=enabled
+      - -Dsystemd-system-service=enabled
       - -Dsnap=enabled
     override-pull: |
       craftctl default
