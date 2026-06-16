@@ -26,6 +26,10 @@ layout:
     symlink: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/wireplumber-0.5
   /usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/alsa-lib:
     symlink: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/alsa-lib
+  /usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libcamera:
+    symlink: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libcamera
+  /usr/libexec/libcamera:
+    symlink: $SNAP/usr/libexec/libcamera
   /etc/alsa:
     bind: $SNAP/etc/alsa
   /etc/pulse:
@@ -217,10 +221,48 @@ slots:
     bus: session
 
 parts:
+  libcamera:
+    plugin: meson
+    source: https://git.libcamera.org/libcamera/libcamera.git
+    source-type: git
+    source-depth: 1
+    source-tag: v0.7.0
+    meson-parameters:
+      - --prefix=/usr
+      - -Dbuildtype=release
+      - -Ddocumentation=disabled
+      - -Dcam=disabled
+      - -Dgstreamer=enabled
+      - -Dlibunwind=enabled
+      - -Dpycamera=disabled
+      - -Dtracing=disabled
+      - -Dlc-compliance=disabled
+      - -Dtest=false
+      - -Dv4l2=enabled
+    build-packages:
+      - libevent-dev
+      - libgnutls28-dev
+      - libgstreamer-plugins-base1.0-dev
+      - libgstreamer1.0-dev
+      - libtiff-dev
+      - libudev-dev
+      - libyaml-dev
+      - libyuv-dev
+      - openssl
+      - pkgconf
+      - python3-jinja2
+      - python3-ply
+      - python3-yaml
+    stage-packages:
+      - libudev1
+      - libyaml-0-2
+      - libyuv0
+
   pipewire:
+    after: [libcamera]
     plugin: meson
     source: https://git.launchpad.net/ubuntu/+source/pipewire
-    source-branch: 'applied/ubuntu/oracular'
+    source-branch: 'ubuntu/resolute'
     source-type: git
     meson-parameters:
       - --prefix=/usr
@@ -231,14 +273,11 @@ parts:
       - -Dtests=disabled
       - -Dsystemd-user-service=enabled
       - -Dsystemd-system-service=enabled
+      - -Dlibcamera=enabled
       - -Dsnap=enabled
     override-pull: |
       craftctl default
-      git_ver="$(git describe --tags --match "applied/*")"
-      git_ver="${git_ver#importer/}"
-      git_ver="${git_ver#applied/}"
-      git_ver="${git_ver%-0-g*}"
-      craftctl set version="${git_ver}"
+      craftctl set version="$(dpkg-parsechangelog -SVersion)"
     build-packages:
       - dpkg-dev
       - debhelper-compat
@@ -247,7 +286,6 @@ parts:
       - libasound2-dev
       - libavahi-client-dev
       - libbluetooth-dev
-      - libcamera-dev
       - libdbus-1-dev
       - libffado-dev
       - libfreeaptx-dev
@@ -304,7 +342,9 @@ parts:
       - libasound2t64
       - libgstreamer-plugins-base1.0-0
       - libmysofa1
-      - libcamera0.2
+      - libegl1
+      - libgles2
+      - libglvnd0
       - libldacbt-enc2
       - libsbc1
       - liblc3-1
