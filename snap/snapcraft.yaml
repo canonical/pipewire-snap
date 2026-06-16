@@ -45,7 +45,7 @@ apps:
   pipewire-bin:
     command: usr/bin/pipewire
     daemon: simple
-    restart-condition: always
+    restart-condition: never
     sockets:
       pipewire-socket:
         listen-stream: $SNAP_COMMON/pipewire-0
@@ -88,7 +88,7 @@ apps:
   wireplumber-bin:
     command: usr/bin/wireplumber
     daemon: simple
-    restart-condition: always
+    restart-condition: never
     after:
       - pipewire-bin
     environment:
