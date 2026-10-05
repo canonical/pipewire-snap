@@ -233,6 +233,7 @@ parts:
       # Same archive build as the desktop content snap ships: the daemons
       # must not be a version downgrade relative to the desktop stack.
       - pipewire-bin
+      - pipewire-pulse
       - wireplumber
       - libspa-0.2-bluetooth
       - alsa-ucm-conf
