@@ -238,10 +238,7 @@ parts:
       - alsa-ucm-conf
     override-build: |
       craftctl default
-      deb_dir="${CRAFT_PART_INSTALL:-/root/parts/pipewire/install}/../stage-packages"
-      if [ ! -d "$deb_dir" ]; then
-          deb_dir="/root/parts/pipewire/stage-packages"
-      fi
+      deb_dir="/root/parts/pipewire/stage_packages"
       craftctl set version="$(dpkg-deb -f "$deb_dir"/pipewire-bin_*.deb Version)"
     stage:
       - -usr/share/doc
