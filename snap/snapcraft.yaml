@@ -1,5 +1,5 @@
 name: pipewire
-base: core24
+base: core26
 adopt-info: pipewire
 summary: Pipewire server, plus wireplumber and pipewire-pulse
 description: |
@@ -36,6 +36,7 @@ apps:
   pipewire-bin:
     command: usr/bin/pipewire
     daemon: simple
+    daemon-scope: user
     restart-condition: always
     sockets:
       pipewire-socket:
@@ -46,8 +47,6 @@ apps:
         socket-mode: 0644
     before:
       - wireplumber-bin
-    passthrough:
-      daemon-scope: user
     slots:
       - pipewire
       - audio-playback
@@ -57,6 +56,7 @@ apps:
       - alsa
       - bluez
       - camera
+      - dbus-portal-desktop
       - hardware-observe
       - media-control
       - network
@@ -66,11 +66,10 @@ apps:
   wireplumber-bin:
     command: usr/bin/wireplumber
     daemon: simple
+    daemon-scope: user
     restart-condition: always
     after:
       - pipewire-bin
-    passthrough:
-      daemon-scope: user
     slots:
       - audio-playback
       - audio-record
@@ -79,6 +78,7 @@ apps:
       - alsa
       - bluez
       - camera
+      - dbus-portal-permission-store
       - hardware-observe
       - media-control
       - network
@@ -88,9 +88,8 @@ apps:
   pipewire-pulse:
     command: usr/bin/pipewire-pulse
     daemon: simple
+    daemon-scope: user
     restart-condition: always
-    passthrough:
-      daemon-scope: user
     sockets:
       pulse-socket:
         listen-stream: $XDG_RUNTIME_DIR/pulse/native
@@ -106,6 +105,16 @@ apps:
       - network
       - network-bind
       - system-observe
+
+  wpctl:
+    command: usr/bin/wpctl
+    slots:
+      - pipewire
+
+  wpexec:
+    command: usr/bin/wpexec
+    slots:
+      - pipewire
 
   pw-play:
     command: usr/bin/pw-play
@@ -207,119 +216,34 @@ slots:
     name: org.pulseaudio.Server
     bus: session
 
+plugs:
+  dbus-portal-desktop:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.portal.Desktop
+  dbus-portal-permission-store:
+    interface: dbus
+    bus: session
+    name: org.freedesktop.impl.portal.PermissionStore
+
 parts:
   pipewire:
-    plugin: meson
-    source: https://git.launchpad.net/ubuntu/+source/pipewire
-    source-branch: 'applied/ubuntu/oracular'
-    source-type: git
-    meson-parameters:
-      - --prefix=/usr
-      - -Doptimization=3
-      - -Ddebug=true
-      - -Dexamples=disabled
-      - -Dman=disabled
-      - -Dtests=disabled
-      - -Dsystemd=enabled
-      - -Dsnap=enabled
-    override-pull: |
-      craftctl default
-      git_ver="$(git describe --tags --match "applied/*")"
-      git_ver="${git_ver#importer/}"
-      git_ver="${git_ver#applied/}"
-      git_ver="${git_ver%-0-g*}"
-      craftctl set version="${git_ver}"
-    build-packages:
-      - dpkg-dev
-      - debhelper-compat
-      - graphviz
-      - libapparmor-dev
-      - libasound2-dev
-      - libavahi-client-dev
-      - libbluetooth-dev
-      - libcamera-dev
-      - libdbus-1-dev
-      - libffado-dev
-      - libfreeaptx-dev
-      - libglib2.0-dev
-      - libgstreamer-plugins-base1.0-dev
-      - libgstreamer1.0-dev
-      - libjack-jackd2-dev
-      - libcanberra-dev
-      - liblc3-dev
-      - libldacbt-abr-dev
-      - libldacbt-enc-dev
-      - liblilv-dev
-      - libmysofa-dev
-      - libncurses-dev
-      - libopus-dev
-      - libpulse-dev
-      - libreadline-dev
-      - libroc-dev
-      - libsbc-dev
-      - libsdl2-dev
-      - libsnapd-glib-dev
-      - libsndfile1-dev
-      - libssl-dev
-      - libsystemd-dev
-      - libudev-dev
-      - libusb-1.0-0-dev
-      - libv4l-dev
-      - libwebrtc-audio-processing-dev
-      - libxfixes-dev
-      - meson
-      - modemmanager-dev
-      - pkgconf
-      - python3-docutils
-      - systemd-dev
+    plugin: nil
     stage-packages:
-      - libxfixes3
-      - libcanberra0t64
-      - libroc0.3
-      - libvorbisfile3
-      - libpulse0
-      - libffado2
-      - liblilv-0-0
-      - libavahi-client3
-      - libopusenc0
-      - libopus0
-      - libudev1
-      - libsnapd-glib-2-1
-      - libbluetooth3
-      - libjson-glib-1.0-0
-      - libnghttp2-14
-      - libpsl5t64
-      - libsoup-3.0-0
-      - libwebrtc-audio-processing1
-      - libasound2t64
-      - libgstreamer-plugins-base1.0-0
-      - libmysofa1
-      - libcamera0.2
-      - libldacbt-enc2
-      - libsbc1
-      - liblc3-1
-      - libldacbt-abr2
-      - libfreeaptx0
-      - libfdk-aac2
-      - libflac12t64
-      - libmp3lame0
-      - libmpg123-0t64
-      - libogg0
-      - libsndfile1
-      - libvorbisenc2
-      - libvorbis0a
-      - libusb-1.0-0
-      - psmisc
-      - bluez-alsa-utils
-
+      # Same archive build as the desktop content snap ships: the daemons
+      # must not be a version downgrade relative to the desktop stack.
+      - pipewire-bin
+      - wireplumber
+      - libspa-0.2-bluetooth
+      - alsa-ucm-conf
+    override-build: |
+      craftctl default
+      deb_dir="${CRAFT_PART_INSTALL:-/root/parts/pipewire/install}/../stage-packages"
+      if [ ! -d "$deb_dir" ]; then
+          deb_dir="/root/parts/pipewire/stage-packages"
+      fi
+      craftctl set version="$(dpkg-deb -f "$deb_dir"/pipewire-bin_*.deb Version)"
     stage:
-      - -usr/bin/meson
-      - -usr/bin/ninja
-      - -usr/lib/python3
-      - -etc/pulse/client.conf.d/01-enable-autospawn.conf
       - -usr/share/doc
-      - -usr/share/pkgconfig
-      - -usr/share/upstart
       - -usr/share/man
-      - -usr/share/session-migration
-      - -usr/include
+      - -usr/share/lintian
