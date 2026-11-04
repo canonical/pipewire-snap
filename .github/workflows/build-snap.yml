@@ -36,3 +36,25 @@ jobs:
           path: pipewire.snap
           compression-level: 0
           retention-days: 14
+
+  publish-26-edge:
+    # Store publishing is manual-only (Actions tab -> Run workflow):
+    # it needs the SNAPCRAFT_STORE_CREDENTIALS repo secret (owner-set,
+    # minimal scopes via `snapcraft export-login`) and collaborator
+    # rights on the "pipewire" snap name, and the "26" track must
+    # already exist (create it once in the store dashboard). Uploads
+    # the exact artifact the snap job built; promotion to 26/stable
+    # happens separately (store dashboard) after VM verification.
+    if: github.event_name == 'workflow_dispatch'
+    needs: snap
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: snap
+      - name: Upload to the Snap Store (26/edge)
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        run: |
+          sudo snap install --classic snapcraft
+          snapcraft upload pipewire.snap --release=26/edge
