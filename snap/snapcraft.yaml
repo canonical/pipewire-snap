@@ -8,6 +8,17 @@ description: |
 grade: stable
 confinement: strict
 
+# Explicit platforms: without this block snapcraft names the output after
+# the host arch implicitly; declaring both keeps the amd64 and arm64 CI
+# legs deterministic and the meta architectures per build arch.
+platforms:
+  amd64:
+    build-on: [amd64]
+    build-for: [amd64]
+  arm64:
+    build-on: [arm64]
+    build-for: [arm64]
+
 layout:
   /usr/share/pipewire:
     bind: $SNAP/usr/share/pipewire
