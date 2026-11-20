@@ -15,9 +15,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: ubuntu-latest
+          - runner: ubuntu-26.04
             suffix: ""
-          - runner: ubuntu-24.04-arm
+          - runner: ubuntu-26.04-arm
             suffix: "-arm64"
     runs-on: ${{ matrix.runner }}
     steps:
@@ -55,7 +55,7 @@ jobs:
     # happens separately (store dashboard) after VM verification.
     if: github.event_name == 'workflow_dispatch'
     needs: snap
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/download-artifact@v4
         with:
